@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Velmurugan Stores | Fresh Groceries & Daily Essentials</title>
   <meta name="description" content="Velmurugan Stores - Fresh groceries, vegetables, dairy products, snacks, and daily essentials with home delivery and WhatsApp ordering." />
+  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -109,15 +110,17 @@
       color: var(--green-dark);
     }
     .logo-icon {
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border-radius: 16px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, var(--green), #45d17a);
-      color: white;
-      font-size: 1.4rem;
+      overflow: hidden;
       box-shadow: 0 12px 25px rgba(31, 157, 85, 0.28);
+      background: white;
+    }
+    .logo-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .nav-links {
       display: flex;
@@ -540,7 +543,7 @@
     <div class="container">
       <nav>
         <div class="logo">
-          <div class="logo-icon">🛒</div>
+          <div class="logo-icon"><img src="logo.png" alt="Velmurugan Stores Logo"></div>
           <div>
             Velmurugan Stores<br>
             <small style="font-weight:600; color: var(--muted);">Fresh • Fast • Friendly</small>
@@ -769,7 +772,7 @@
           <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80" alt="Grocery shelves">
           <img src="https://images.unsplash.com/photo-1579113800032-c38bd7635818?auto=format&fit=crop&w=900&q=80" alt="Vegetables">
           <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=900&q=80" alt="Fruits">
-          <img src="lays.jpg" alt="Store counter">
+          <img src="lays.jpg" alt="Snacks aisle">
         </div>
       </div>
     </section>
@@ -789,7 +792,8 @@
             <div class="contact-list">
               <div class="contact-item"><div>📍</div><div><strong>Address</strong><span>191/1 Pal nadar oil mill opp, <br>Way to pethanatchi mahal,<br>Theni, Tamil Nadu - 625531</span></div></div>
               <div class="contact-item"><div>📞</div><div><strong>Phone</strong><span>+91 9095031829 <br>+91 9003577284</span></div></div>
-              <div class="contact-item"><div>⏰</div><div><strong>Store Hours</strong><span>Everyday: 7:00 AM - 9:30 PM</span></div></div>
+              <div class="contact-item"><div>⏰</div><div><strong>Store Hours</strong><span>Everyday: 6:00 AM - 9:30 PM</span></div></div>
+              <div class="contact-item"><div>⏰</div><div><strong>Lunch Hours</strong><span>Everyday: 1:30 PM - 4:00 PM</span></div></div>
               <div class="contact-item"><div>🚚</div><div><strong>Delivery</strong><span>Currently Unavailable. <br>Sorry for the inconvenience.</span></div></div>
             </div>
 
@@ -869,15 +873,23 @@
       });
     });
 
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const name = contactForm.querySelector('input[type="text"]').value;
   const phone = contactForm.querySelector('input[type="tel"]').value;
   const message = contactForm.querySelector('textarea').value;
 
-  const whatsappNumber = "919095031829"; // Replace with your WhatsApp number
+  // Save to Firebase Firestore
+  try {
+    await window.saveEnquiry({ name, phone, message });
+    console.log("Enquiry saved to database!");
+  } catch (err) {
+    console.error("DB save failed:", err);
+  }
 
+  // Send to WhatsApp as usual
+  const whatsappNumber = "919095031829";
   const whatsappMessage =
     `Hello Velmurugan Stores,%0A%0A` +
     `New Customer Enquiry:%0A` +
@@ -886,9 +898,46 @@
     `🛒 Message / Grocery List: ${message}`;
 
   window.open(`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`, '_blank');
-
   contactForm.reset();
+
+  // Show success toast
+  const toast = document.getElementById('toast');
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 4000);
 });
+  </script>
+
+  <!-- Toast Notification -->
+  <div id="toast" style="display:none; position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#1f9d55,#3ecf78); color:white; padding:16px 28px; border-radius:999px; font-weight:700; z-index:9999; box-shadow:0 10px 30px rgba(31,157,85,0.3);">
+    ✅ Enquiry saved & sent to WhatsApp!
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAOi5RPA3L0_K6vzEgh-PJEE8jZhYGlOhM",
+      authDomain: "velmurugan-store.firebaseapp.com",
+      projectId: "velmurugan-store",
+      storageBucket: "velmurugan-store.firebasestorage.app",
+      messagingSenderId: "320842058361",
+      appId: "1:320842058361:web:a41a5019b90cd74c7b22a8",
+      measurementId: "G-CX40V330YR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveEnquiry = async ({ name, phone, message }) => {
+      await addDoc(collection(db, "enquiries"), {
+        name,
+        phone,
+        message,
+        timestamp: serverTimestamp()
+      });
+    };
   </script>
 </body>
 </html>
